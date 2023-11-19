@@ -50,16 +50,18 @@ def process_directory(directory):
             destination_path = os.path.join(directory, destination_folder, normalized_name)
             
             # Додано перевірку та створення каталогів
-            os.makedirs(os.path.dirname(destination_path), exist_ok=True)
+            if not os.path.isdir(destination_path):
+                os.makedirs(os.path.dirname(destination_path), exist_ok=True)
             
             shutil.move(file_path, destination_path)
 
         for dir_name in dirs:
             dir_path = os.path.join(root, dir_name)
-            process_directory(dir_path)
-            if not os.listdir(dir_path):
-                os.rmdir(dir_path)
-
+            # Ігноруємо папку "images"
+            if dir_name.lower() not in ('images', 'video', 'documents', 'audio', 'archives'):
+                process_directory(dir_path)
+                if not os.listdir(dir_path):
+                    os.rmdir(dir_path)
 
 if __name__ == "__main__":
     import sys
