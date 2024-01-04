@@ -5,6 +5,7 @@ import pathlib
 import tempfile
 import datetime
 import collections
+import zipfile
 
 RESULTS_FOLDERS = ("images", "video", "documents", "audio", "archives")
 
@@ -19,7 +20,7 @@ def normalize(name):
         'є': 'je', 'і': 'i', 'ї': 'ji', 'ґ': 'g'
     }
     
-    result = ''.join(transliteration_dict.get(char, char) for char in name.lower())
+    result = ''.join(transliteration_dict.get(char, char) for char in name)
     result = ''.join([c if c.isalpha() or c.isdigit() or c == '.' else '_' for c in result])
     return result
 
@@ -67,12 +68,43 @@ def process_file(result_path, element, extensions_info):
         if not result_path.is_dir():
             result_path.mkdir()
 
-        if dest_folder == "archives":
-            result_path /= f"{normalize(element.stem)}" #!
+        # if dest_folder == "archives":
+        #     result_path /= f"{normalize(element.stem)}" #!
 
-            shutil.unpack_archive(
-                str(element), str(result_path), element.suffix[1:].lower()
-            )
+        #     shutil.unpack_archive(
+        #         str(element), str(result_path), element.suffix[1:].lower()
+        #     )
+        #----------------------------------------------------------
+        # if dest_folder == "archives":
+        #     result_path /= f"{normalize(element.stem)}"
+
+        #     # Перевірка, чи файл є архівом
+        #     if element.suffix[1:].lower() in ('zip', 'gz', 'tar'):
+        #         try:
+        #             with zipfile.ZipFile(str(element), 'r') as zip_ref:
+        #                 zip_ref.extractall(str(result_path))
+        #         except zipfile.BadZipFile:
+        #             print(f"Error: {element} is not a valid zip file.")
+        #             # Тут можна реалізувати інші дії для невалідних архівів
+        #     else:
+        #         shutil.copy(str(element), str(result_path))
+        
+        if dest_folder == "archives":
+            result_path /= f"{normalize(element.stem)}"
+
+            # Перевірка, чи файл є архівом
+            if element.suffix[1:].lower() in ('zip', 'gz', 'tar'):
+                try:
+                    with zipfile.ZipFile(str(element), 'r') as zip_ref:
+                        zip_ref.extractall(str(result_path))
+                except zipfile.BadZipFile:
+                    print(f"Error: {element} is not a valid zip file. Deleting...")
+                    element.unlink()  # Видалення невалідного архіву
+                    pass
+
+            else:
+                shutil.copy(str(element), str(result_path))
+
         else:
             result_path /= f"{normalize(element.stem)}{element.suffix}" #!
 
