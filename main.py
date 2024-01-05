@@ -7,7 +7,7 @@ import datetime
 import collections
 import zipfile
 
-RESULTS_FOLDERS = ("images", "video", "documents", "audio", "archives")
+RESULTS_FOLDERS = ("images", "video", "documents", "audio", "archives", "unknown")
 
 
 def normalize(name):
@@ -59,39 +59,18 @@ def process_file(result_path, element, extensions_info):
 
     known = suffixes_dict.get(suffix) is not None
 
+    dest_folder = suffixes_dict.get(suffix, 'unknown')
+    result_path /= dest_folder
+
+    if not result_path.is_dir():
+        result_path.mkdir(parents=True)  # Створення всіх батьківських папок, якщо вони не існують
+
     extensions_info["known" if known else "unknown"].add(suffix)
 
-    if known:
-        dest_folder = suffixes_dict[suffix]
-        result_path /= dest_folder #!
+    if dest_folder == "archives":
+        result_path /= f"{normalize(element.stem)}"
 
-        if not result_path.is_dir():
-            result_path.mkdir()
-
-        # if dest_folder == "archives":
-        #     result_path /= f"{normalize(element.stem)}" #!
-
-        #     shutil.unpack_archive(
-        #         str(element), str(result_path), element.suffix[1:].lower()
-        #     )
-        #----------------------------------------------------------
-        # if dest_folder == "archives":
-        #     result_path /= f"{normalize(element.stem)}"
-
-        #     # Перевірка, чи файл є архівом
-        #     if element.suffix[1:].lower() in ('zip', 'gz', 'tar'):
-        #         try:
-        #             with zipfile.ZipFile(str(element), 'r') as zip_ref:
-        #                 zip_ref.extractall(str(result_path))
-        #         except zipfile.BadZipFile:
-        #             print(f"Error: {element} is not a valid zip file.")
-        #             # Тут можна реалізувати інші дії для невалідних архівів
-        #     else:
-        #         shutil.copy(str(element), str(result_path))
-        
-        if dest_folder == "archives":
-            result_path /= f"{normalize(element.stem)}"
-
+        if known:
             # Перевірка, чи файл є архівом
             if element.suffix[1:].lower() in ('zip', 'gz', 'tar'):
                 try:
@@ -101,14 +80,19 @@ def process_file(result_path, element, extensions_info):
                     print(f"Error: {element} is not a valid zip file. Deleting...")
                     element.unlink()  # Видалення невалідного архіву
                     pass
-
             else:
                 shutil.copy(str(element), str(result_path))
+    else:
+        result_path /= f"{normalize(element.stem)}{element.suffix}" #!
 
-        else:
-            result_path /= f"{normalize(element.stem)}{element.suffix}" #!
-
+        if known:
             shutil.copy(str(element), str(result_path))
+        else:
+            # Додавання невідомих розширень в окрему папку
+            unknown_folder = result_path / "unknown"
+            if not unknown_folder.is_dir():
+                unknown_folder.mkdir(parents=True)
+            shutil.copy(str(element), str(unknown_folder / f"unknown_{element.name}"))
 
     return True
 
