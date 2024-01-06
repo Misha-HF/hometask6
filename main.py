@@ -39,6 +39,65 @@ def process_dir(result_path, element, extensions_info):
     return res
 
 
+# def process_file(result_path, element, extensions_info):
+
+#     table = (
+#         ('JPEG', 'PNG', 'JPG', 'SVG'),
+#         ('AVI', 'MP4', 'MOV', 'MKV'),
+#         ('DOC', 'DOCX', 'TXT', 'PDF', 'XLSX', 'PPTX'),
+#         ('MP3', 'OGG', 'WAV', 'AMR'),
+#         ('ZIP', 'GZ', 'TAR')
+#     )
+
+#     suffixes_dict = {
+#         table[i][j]: RESULTS_FOLDERS[i]
+#         for i in range(len(table))
+#         for j in range(len(table[i]))
+#     }
+
+#     suffix = element.suffix[1:].upper()
+
+#     known = suffixes_dict.get(suffix) is not None
+
+#     dest_folder = suffixes_dict.get(suffix, 'unknown')
+#     result_path /= dest_folder
+
+#     if not result_path.is_dir():
+#         result_path.mkdir(parents=True)  # Створення всіх батьківських папок, якщо вони не існують
+
+#     extensions_info["known" if known else "unknown"].add(suffix)
+
+#     if dest_folder == "archives":
+#         result_path /= f"{normalize(element.stem)}"
+
+#         if known:
+#             # Перевірка, чи файл є архівом
+#             if element.suffix[1:].lower() in ('zip', 'gz', 'tar'):
+#                 try:
+#                     with zipfile.ZipFile(str(element), 'r') as zip_ref:
+#                         zip_ref.extractall(str(result_path))
+#                 except zipfile.BadZipFile:
+#                     print(f"Error: {element} is not a valid zip file. Deleting...")
+#                     element.unlink()  # Видалення невалідного архіву
+#                     pass
+#             else:
+#                 shutil.copy(str(element), str(result_path))
+#     else:
+#         result_path /= f"{normalize(element.stem)}{element.suffix}" #!
+
+#         if known:
+#             shutil.copy(str(element), str(result_path))
+#         else:
+#             # Додавання невідомих розширень в окрему папку
+#             unknown_folder = result_path / "unknown"
+#             if not unknown_folder.is_dir():
+#                 unknown_folder.mkdir(parents=True)
+#             shutil.copy(str(element), str(unknown_folder / f"unknown_{element.name}"))
+
+#     return True
+
+# ...
+
 def process_file(result_path, element, extensions_info):
 
     table = (
@@ -68,7 +127,7 @@ def process_file(result_path, element, extensions_info):
     extensions_info["known" if known else "unknown"].add(suffix)
 
     if dest_folder == "archives":
-        result_path /= f"{normalize(element.stem)}"
+        result_path /= normalize(f"{element.stem}{element.suffix}") #!
 
         if known:
             # Перевірка, чи файл є архівом
@@ -92,9 +151,11 @@ def process_file(result_path, element, extensions_info):
             unknown_folder = result_path / "unknown"
             if not unknown_folder.is_dir():
                 unknown_folder.mkdir(parents=True)
-            shutil.copy(str(element), str(unknown_folder / f"unknown_{element.name}"))
+            shutil.copy(str(element), str(unknown_folder / f"unknown_{normalize(element.name)}")) #!
 
     return True
+
+# ...
 
 
 def diver(result_path, folder_path, extensions_info):
@@ -154,3 +215,4 @@ if __name__ == "__main__":
         raise RuntimeError(f"usage: {sys.argv[0]} folder_platform_path")
 
     sorter(sys.argv[1])
+
